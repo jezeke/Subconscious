@@ -1,9 +1,9 @@
-# FOR WINDOWS DO:
-# g++ -std=c++17 Subconscious.cpp -o Sub -luser32 -lgdi32 -lopengl32 -lgdiplus -lshlwapi -lstdc++fs -ldwmapi
+# FOR WINDOWS CHECK make.bat
 
+# UNTESTED ON LINUX! Probably missing some link flags, or stuff to make SDL2 work.
 CC = g++
-CFLAGS = -Wall -g -Wextra
-LFLAGS = -lX11 -lGL -lpthread -lpng -lstdc++fs
+CFLAGS = -Wall -g -Wextra -march=native -Iinclude
+LFLAGS = -lX11 -lGL -lpthread -lpng -lstdc++fs -lasound -lSDL2main -lSDL2
 
 all: Subconscious
 
