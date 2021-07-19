@@ -7,7 +7,7 @@ LFLAGS = -lX11 -lGL -lpthread -lpng -lstdc++fs -lasound -lSDL2main -lSDL2
 
 all: Subconscious
 
-Subconscious: Subconscious.cpp Subconscious.hpp
+Subconscious: Subconscious.cpp uiBlinker.cpp uiGauges.cpp uiPanels.cpp uiRadar.cpp World.cpp SubSystems.cpp Sound.cpp 
 	$(CC) $(CFLAGS) $(LFLAGS) Subconscious.c -o Subconscious
 
 clean:

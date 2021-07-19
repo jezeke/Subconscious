@@ -12,6 +12,16 @@
 #define CUTE_SOUND_IMPLEMENTATION
 #include <cute_sound.h>
 
+#include "SubSystems.cpp"
+#include "World.cpp"
+#include "Sound.cpp"
+
+#include "uiBlinker.cpp"
+#include "uiGauges.cpp"
+#include "uiPanels.cpp"
+#include "uiRadar.cpp"
+
+
 
 class Subconscious : public olc::PixelGameEngine
 {
@@ -23,28 +33,22 @@ public:
 
 public:
 
-  cs_context_t* ctx;
-  cs_loaded_sound_t ambFile;
-  cs_playing_sound_t ambSound;
+	Sound soundEngine;
+
+	World world;
+	SubSystems sub;
+
+	uiRadar uiRadar;
+	uiBlinker uiBlinker;
+	uiGauges uiGauges;
+	uiPanels uiPanels;
 
 	bool OnUserCreate() override
 	{
 		// Called once at the start, so create things here
 
     //olc::ResourcePack* pack = new olc::ResourcePack();
-
     //pack->SavePack("respak.dat", "#");
-
-    ctx = cs_make_context(NULL, 44100, 2056, 0, NULL);
-
-    ambFile = cs_load_wav("assets/whale-background-sounds_16bitDepth.wav");
-    ambSound = cs_make_playing_sound(&ambFile);
-
-    cs_spawn_mix_thread(ctx);
-
-    cs_insert_sound(ctx, &ambSound);
-
-    cs_loop_sound(&ambSound, 1);
 
 		return true;
 	}
@@ -52,20 +56,24 @@ public:
 	bool OnUserUpdate(float fElapsedTime) override
 	{
 		// called once per frame
-		for (int x = 0; x < ScreenWidth(); x++)
-			for (int y = 0; y < ScreenHeight(); y++)
-				Draw(x, y, olc::Pixel(rand() % 255, rand() % 255, rand()% 255));
+
+		world.simulate(fElapsedTime);
+		sub.simulate(fElapsedTime);
+
+		uiRadar.render(fElapsedTime, world, sub);
+		uiBlinker.render(fElapsedTime, world, sub);
+		uiGauges.render(fElapsedTime, world, sub);
+		uiPanels.render(fElapsedTime, world, sub);
+
 		return true;
 	}
 };
 
-
 int main(int argc, char **argv)
 {
 	Subconscious game;
-	if (game.Construct(256, 240, 4, 4, false, true, false))
+	if (game.Construct(1080/2, 720/2, 2, 2, false, false, false))
 		game.Start();
 
-  cs_free_sound(&(game.ambFile));
 	return 0;
 }
