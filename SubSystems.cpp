@@ -2,6 +2,24 @@
 #include <cmath>
 #include <algorithm>
 
+enum RoomKey {
+  lifesupport,
+  reactor,
+  bridge,
+  torpedobay,
+  hold,
+  engine
+};
+
+enum ValueKey {
+  water,
+  oxygen,
+  fuel,
+  battery,
+  temp,
+  hull
+};
+
 struct Room {
   std::string name; //pretty name printed on UI
   float floodLevel; //0 - 100
@@ -11,6 +29,7 @@ struct Room {
   float malfunctionRemaining; //remaining time units until malfunction ends
 };
 
+//numeric values. easily accessible by UI elements for printing gauges & blinkers
 struct SystemValue {
   std::string name; //print name printed on UI
   float value;
@@ -26,11 +45,15 @@ class SubSystems
   private:
 
   public:
-    std::map<Room> rooms;
-    std::map<SystemValue> values;
+    std::map<RoomKey, Room> rooms;
+    std::map<ValueKey, SystemValue> values;
 
     float reactorLevel; //reactor power setting. reactor is off if reactorLevel < 20.0
     float reactorStartRemaining; //milliseconds until reactor starts. if at 0, reactor is running or has not been commanded to restart
+
+    float engineLevel; //engine power setting. -100 (reverse) to 100 (forward)
+    float targetBearing; //0 - 360 deg
+    float depthMod; //target depth relative to current depth
 
     bool torpedos[5] = {};
 
@@ -45,25 +68,25 @@ class SubSystems
     //default constructor
     SubSystems()
     {
-      //defines key name and printed names for each room on the submarine. printed names should be safe to change without causing code errors
-      roomNames = [["lifesupport", "reactor", "bridge","torpedobay","hold","engine"],["Life Support Components", "Reactor", "Bridge", "Torpedo Bay", "Hold", "Engine Room"]];
+      //strings should be safe to change without causing errors
+      std::vector<std::pair<RoomKey, std::string>> roomNames = {{lifesupport, "Life Support Components"}, {reactor, "Reactor"}, {bridge, "Bridge"}, {torpedobay, "Torpedo Bay"}, {hold, "Hold"}, {engine, "Engine Room"}};
 
-      for(int i = 0; i < roomNames[0].length; i++)
+      for(auto pair : roomNames)
       { //set to initial values - no damage or fire, etc.
-        rooms[roomNames[0][i]] = {roomNames[1][i], 0.0, 0.0, false, 0.0};
+        rooms[pair.first] = {pair.second, 0.0, 0.0, false, 0.0};
       }
 
-      //defines key name and printed names for each system value. printed names should be safe to change without causing code errors
-      valueNames = [["water", "oxygen", "fuel", "battery", "temp", "hull"],["External PSI", "Oxygen \%", "Fuel \%", "Battery \%", "Temperature °C", "Hull \%"]];
+      //strings should be safe to change without causing errors
+      std::vector<std::pair<ValueKey, std::string>> valueNames = {{water, "External PSI"}, {oxygen, "Oxgyen \%"}, {fuel, "Fuel \%"}, {battery, "Batter \%"}, {temp, "Temperature °C"}, {hull, "Hull \%"}};
 
-      for(int i = 0; i < valueNames[0].length; i++)
+      for(auto pair : valueNames)
       { //set to initial values
         SystemValue val;
-        val.name = valueNames[1][i];
+        val.name = pair.second;
 
-        switch(valueNames[0][i])
+        switch(pair.first)
         {
-          "water": //AKA depth. mostly controlled by World; this just reflects that.
+          water: //reflects depth. mostly controlled by World; this just reflects that.
             val.value = 16.70; //just below surface
             val.max = INFINITY;
             val.min = 14.70; //surface level. should never go above this anyway
@@ -71,7 +94,7 @@ class SubSystems
             val.warningMax = INFINITY; //can tweak later; will probably get annoying if an alarm is going on for the last half of the game
             val.displayIncrement = 1.0;
             break;
-          "oxygen":
+          oxygen:
             val.value = 19.00;
             val.max = 100.00;
             val.min = 0.00;
@@ -79,7 +102,7 @@ class SubSystems
             val.warningMax = 30.5;
             val.displayIncrement = 0.01;
             break;
-          "fuel":
+          fuel:
             val.value = 100;
             val.max = 100;
             val.min = 0;
@@ -87,7 +110,7 @@ class SubSystems
             val.warningMax = INFINITY;
             val.displayIncrement = 0.01;
             break;
-          "battery": //AKA energy or power
+          battery: //AKA energy or power
             val.value = 100.0;
             val.max = 100.0;
             val.min = 0.0;
@@ -95,7 +118,7 @@ class SubSystems
             val.warningMax = INFINITY;
             val.displayIncrement = 0.5;
             break;
-          "temp": //temperature
+          temp: //temperature
             val.value = 23.0;
             val.max = 300.0;
             val.min = -100.0;
@@ -103,7 +126,7 @@ class SubSystems
             val.warningMax = 35.0; //humans die at about 45 C
             val.displayIncrement = 0.1;
             break;
-          "hull":
+          hull:
             val.value = 100.0;
             val.max = 100.0;
             val.min = 0.0;
@@ -113,20 +136,24 @@ class SubSystems
             break;
         }
 
-        values[valueNames[0][i]] = val;
-
-        reactorLevel = 20.0;
-        reactorStartRemaining; = 0.0;
-
-        std::fill_n(torpedos, sizeof(torpedos)/sizeof(*torpedos), 1);
-
-        fireSuppression = "";
-        bilge = "";
-
-        oxyGen = false;
-        heater = false;
-        volcano = false;
+        values[pair.first] = val;
       }
+
+      reactorLevel = 20.0;
+      reactorStartRemaining = 0.0;
+
+      engineLevel = 0;
+      targetBearing = 0;
+      depthMod = 0;
+
+      std::fill_n(torpedos, sizeof(torpedos)/sizeof(*torpedos), 1);
+
+      fireSuppression = "";
+      bilge = "";
+
+      oxyGen = false;
+      heater = false;
+      volcano = false;
     }
 
     void simulate(float fElapsedTime)

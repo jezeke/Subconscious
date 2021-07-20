@@ -57,8 +57,8 @@ public:
 	{
 		// called once per frame
 
-		world.simulate(fElapsedTime);
 		sub.simulate(fElapsedTime);
+		world.simulate(fElapsedTime, sub);
 
 		uiRadar.render(fElapsedTime, world, sub);
 		uiBlinker.render(fElapsedTime, world, sub);

@@ -1,4 +1,5 @@
 #pragma once
+#include "SubSystems.cpp"
 
 class World
 {
@@ -11,8 +12,8 @@ class World
 
     }
 
-    void simulate(float fElapsedTime)
+    void simulate(float fElapsedTime, SubSystems sub)
     {
-
+      //check SubSystems engine state and update sub position accordingly
     }
 };
