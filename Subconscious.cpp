@@ -43,6 +43,8 @@ public:
 	uiGauges uiGauges;
 	uiPanels uiPanels;
 
+	double runtime = 0;
+
 	bool OnUserCreate() override
 	{
 		// Called once at the start, so create things here
@@ -56,14 +58,31 @@ public:
 	bool OnUserUpdate(float fElapsedTime) override
 	{
 		// called once per frame
+		runtime += fElapsedTime; //seconds since program started
 
-		sub.simulate(fElapsedTime);
-		world.simulate(fElapsedTime, sub);
+		sub.simulate(runtime);
+		world.simulate(runtime, sub);
 
-		uiRadar.render(fElapsedTime, world, sub);
-		uiBlinker.render(fElapsedTime, world, sub);
-		uiGauges.render(fElapsedTime, world, sub);
-		uiPanels.render(fElapsedTime, world, sub);
+		/*uiRadar.render(runtime, world, sub);
+		uiBlinker.render(runtime, world, sub);
+		uiGauges.render(runtime, world, sub);
+		uiPanels.render(runtime, world, sub);*/
+
+		int viewZ = (int)(runtime*8) % world.sizeZ; //view next frame every 8th of a second
+
+		for(uint32_t x = 0; x < world.sizeX; x++)
+		{
+			for(uint32_t y = 0; y < world.sizeY; y++)
+			{
+				if(world.data[x][y][viewZ])
+					Draw(x, y, olc::Pixel(255, 255, 255));
+				else
+					Draw(x, y, olc::Pixel(0,0,0));
+
+				//int tint = world.data[x][y][viewZ];
+				//Draw(x, y, olc::Pixel(tint, tint, tint));
+			}
+		}
 
 		return true;
 	}
@@ -72,7 +91,9 @@ public:
 int main(int argc, char **argv)
 {
 	Subconscious game;
-	if (game.Construct(1080/2, 720/2, 2, 2, false, false, false))
+
+	//if(game.Construct(1080/2, 720/2, 2, 2, false, false, false))
+	if(game.Construct(game.world.sizeX, game.world.sizeY, 2, 2, false, false, false))
 		game.Start();
 
 	return 0;
