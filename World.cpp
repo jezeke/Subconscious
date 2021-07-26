@@ -40,8 +40,8 @@ class World
       if(header[0] != 1381388120) throw std::invalid_argument("invalid file header"); //RVOX magic header
 
       sizeX = header[1];
-      sizeY = header[2];
-      sizeZ = header[3];
+      sizeZ = header[2];
+      sizeY = header[3];
 
       data.resize(sizeX, std::vector<std::vector<bool>>(sizeY, std::vector<bool>(sizeZ)));
       std::vector<uint8_t> buffer(sizeX*sizeY*sizeZ);
@@ -50,9 +50,9 @@ class World
       fs.read(reinterpret_cast<char*>(&buffer[0]), buffer.size() * sizeof(uint8_t));
 
       auto iter = begin(buffer);
-      for(uint32_t z = sizeZ; z-- > 0; )
+      for(uint32_t y = sizeY; y-- > 0; )
       {
-        for(uint32_t y = sizeY; y-- > 0; )
+        for(uint32_t z = sizeZ; z-- > 0; )
         {
           for(uint32_t x = sizeX; x-- > 0; )
           {
